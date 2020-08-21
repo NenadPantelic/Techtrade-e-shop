@@ -1,0 +1,524 @@
+bazni url: http://78.46.117.245:9000, dakle na ovaj url dodajete svaki url ispod
+npr. ako je napisano /primeri/, endpoint url je http://78.46.117.245:9000/primeri/, mozete da kreirate jednu promenljivu koja ce imati vrednost baznog url
+baseUrl = 'http://78.46.117.245:9000'
+i onda u svakoj metodi da dodajete baseUrl + '/primeri/'
+
+
+
+-----KORISNICI-----
+
+1./login
+user:username
+password:user
+
+to je jedan korisnik u bazi da probate login
+
+request: { "username":"username", "password":"user" } za navedeni primer
+
+response koji dobijate je
+{
+"username": "username",
+"token": string,
+"role": role kao string
+}
+
+i status 200, ako je login prosao
+- username stavite korisniku u desni ugao stranice
+- token vam sluzi kao auth sredstvo
+- role da bi znali koju stranu da mu otvorite
+token spakujte u local storage, i kada god vam treba vadite iz local storage - zastite pristup stranama koje korisnik ne sme da vidi
+
+ako nije
+
+{
+"message": "Invalid login credentials."
+} i status 401 Unauthorized
+
+
+OVO JE JEDINI ENDPOINT GDE NE SALJETE TOKEN U HEADERU, kada budete ubacivali token ubacite bas pod nazivom token (bas tako napisano)
+
+2) /users/ 
+
+GET metoda, ako je sve u redu dobija se status 200
+oblik response-a:
+
+{
+[
+	{
+		"id":longint,
+		"username":string,
+		"email":string,
+		"firstName":string,
+		"lastName":string
+		"role":string iz skupa {"WORKER","MANAGER", "OWNER", "ADMIN"}
+	} --> dobijate niz ovakvih jsona
+
+]
+
+3. /users/{id}/
+
+id je promenljiva vrednost , dakle id nekog od korisnika
+
+ukoliko taj korisnik postoji dobijate isti oblik jsona kao u tacki 1, samo nije niz u pitanju vec jedan json, za tog korisnika,
+ukoliko ne postoji korisnik sa tim id, dobijate json oblika {"message":"No value present"} i status code 404 Not Found - vrv da vam ovaj endpoint i ne treba ako nemate otvaranje strane jednog korisnika ili moj profil stranu 
+
+4./users/{id}
+
+DELETE metoda - brisanje korisnika
+
+kako da resite ovaj problem sa id - kada otvarate stranu sa korisnicima, prvo cete morati da okinete endpoint iz tacke 1 - da dobijete korisnike, a onda cete kod svakog imati dugme za brisanje. Kada budete kreirali listu korisnika, dodajte tom div elementu ili koji vec tag imate id = "id korisnika" i onda cete tako znati koji id saljete. Napravite on click event i taj event handler ce uzeti vrednost id-ja tog diva/ili tog nekog taga
+
+
+5./users/
+POST metoda
+request body
+{
+
+
+"firstName":string,
+"lastName":string,
+"username":string,
+"email":string,
+"password":string,
+"role":int -> 0,1,2,3 0 -WORKER, 1- MANAGER, 2 - ADMIN, 3 - OWNER
+
+}
+
+username i email moraju biti jedinstveni, mail validan, postoje jos neki validatori duzine itd. Ako ne zadovoljite neki constraint dobicete sledecu poruku:
+{
+"message": "Could not execute action. Request violate some contstraint."
+}
+i statusni kod 400 BAD REQUEST
+Dobijate isti json kao kada fetchujete nekog korisnika:
+{
+"id":longint,
+"username":string,
+"email":string,
+"firstName":string,
+"lastName":string
+"role":string iz skupa {"WORKER","MANAGER", "OWNER", "ADMIN"}
+}
+
+6./users/{id}
+
+PUT metoda
+ovo nemate, ali isto radi kao POST
+
+
+7. /logout
+saljete samo token u headeru - ako je proslo dobice
+{
+"status": true
+}
+
+
+
+------PROIZVODI------
+
+1./producers/
+
+GET metoda; vraca listu proizvodjaca u sledecem obliku:
+{
+"id": int,
+	"name": string
+}
+
+- takvu listu dobijate, bitno je da sacuvate ID (kada birate korisnika mozete da stavite drop down select opciju i da imena opcija vezeete za id); dakle name prikazujete u listi da  bi odabrao proizvodjaca, a id vezete za opciju (nju mi saljete)
+
+2. /product_types/
+GET metoda
+- vraca listu kategorija proizvoda
+{
+"id":int,
+"name":string
+
+}
+- ista prica vazi kao i za proizvodjace
+
+- ako vam bude problem, prebacicu da mi saljete string dirketno
+
+
+3. /products/
+POST metoda 
+primer requesta:
+{
+"producer": 1, ---> ovo je zapravo id proizvodjaca
+"productType": 1, ----> ovo je zapravo id tipa proizvoda
+"quantity": 10,
+"price": 3000,
+"productURL": "https://www.emmi.rs/ssd-ssd-sata3-240gb-biostar-s100-series-530-410mb-s.11.html?productId=77987",
+"warranty": 24,
+"image": multipart form data (slika),
+"name": "Sluske2222222222",
+"properties": "color:black,speed:300mb/s"
+}
+
+- ime proizvoda mora da bude jedinstveno
+
+4./products/
+GET metoda --> lista proizvoda
+primer response:
+
+{
+"id": 8,
+"producer": "Sony",
+"productType": "KEYBOARD",
+"quantity": 50,
+"price": 1200,
+"productURL": "http://test.com",
+"warranty": 12,
+"imagePath": putanja do slike koju ucitavate onda preko <img> tagova,
+"name": "pisa222dede",
+"properties": "test"
+} -> dobijate niz ovakvih jsona
+
+5. /products/{id}/
+PUT metoda ---> izmena podataka proizvoda (dakle napravite editable polja)
+
+isti oblik requesta kao kod POST, ne morate sve podatke da saljete
+
+6./products/search
+
+POST metoda --> pretraga proizvoda
+{
+	"text":string za pretragu
+
+} -- dobijate listu proizvoda (isti oblik response kao u tacki 4 za proizvode)
+
+7./products/discount/
+
+POST metoda - omogucavanje popusta prema kategoriji ili vrsti prozivoda
+{
+
+	"producer":id proizvodjaca,
+	"productType":id vrste proizvoda,
+	"discountCoefficient":int (u opsegu 1-100)
+}
+
+dobijate true/false (prosla, nije prosla akcija popusta)
+ne morate da saljete i producer i productType (ako posaljete samo producer, onda se postavlja popust na sve proizvode proizvodjaca), odnosno ako posaljete productType(onda na tip proizvoda), ako posaljete oba, gledaju se oba faktora; koeficijent popusta je procenat popusta
+8./products/{id}/order
+
+POST metoda, bez body-ja
+-radnik narucuje proizvod
+
+- ovo je koncipirano tako da radnici narucuju proizvod kojeg nema stanju, a onda komercijalista vidi te proizvode i naruci listu proizvoda od dobavljaca
+
+9./products/{id}/
+
+DELETE metoda - za brisanje korisnika
+
+10./products/{id}/discount
+{
+
+	"discountCoefficient":int (u opsegu 1-100)
+}
+
+popust na ovaj proizvod samo
+
+
+11./products/discount/
+GET metoda
+
+dobijate sve proizovde kojima je odredjen automatski popust - da bi se ovi proizvodi stavili na popust, potrebno je odobrenje administratora ili komercijaliste (stavka 5b)
+
+- isti oblik responsea kao kod liste proizvoda
+
+
+12. /products/discount/approve
+
+POST metoda
+{
+	 "products":lista id-jeva (long intovi) proizvoda koji idu na popust (kojima se odobrava automatski popust)
+	 "all":boolean (true/false)
+}
+
+- ako saljete listu id-jeva, onda se tim proizvodima dopusta popust
+- ako posaljete "all":true, onda se svim proizvodima sa liste daje popust 
+- ne morate oba da saljete, (all nadjacava listu id-jeva ako se oba podatka posalju)
+
+
+13./buy
+
+POST metoda
+- saljete listu, niz jsona ovog oblika [{},{},{},{}] ---> dakle uglaste zagrade i u njima jsoni, gde jedan json ima sledeci izgled
+{
+	"productID":id proizvoda,
+	"quantity":kolicina 
+
+}
+
+
+- ovde saljete sve proizvode koje zelite da kupite - dakle korpu proizvoda
+
+response npr
+{
+  "id": 28,
+  "soldProducts": [
+    {
+      "id": 42,
+      "product": "abc",
+      "quantity": 1,
+      "price": 1200,
+      "returned": true
+    }, - jedan prodat proizvod (cena je po jednom komadu, pa mozete konacnu za ovaj proizvo da dovijete kao price * quantity)
+    {
+      "id": 43,
+      "product": "abcd",
+      "quantity": 1,
+      "price": 1200,
+      "returned": false
+    }
+  ],
+  "cashier": "user user", - kasir
+  "price": 2400, ->ukupna cena
+  "saleDate": "2019/04/08 19:29:55" - vreme prodaje
+}
+14. /bills/
+GET - dobijate listu racuna
+
+listu jsona kao u prethodnoj stavci
+
+15./bills/{id}/
+GET - odredjeni racun
+
+16./bills/{id}/pdf 
+GET - odredjeni racun u pdf-u (browser bi trebalo sam da handluje ovo - default ponasanje je preuzimanje tog pdf)
+application/pdf dobijate kao MIME format
+17./bills/{id}/
+DELETE metoda - brise taj racun
+
+
+18./soldproducts/substitute/ - zamena proizvoda (vratis stari, uzmes drugi)
+primer requesta
+{
+	"billId":28 - id racuna kupljenog proizvoda,
+	"oldProduct":42, - id starog proizvoda (ovo je id koji se nalazi na racunu (pdf )) - korisnik donosi sa sobom racun
+	"newProduct":26 - id novog proizvoda koji bi da uzme
+
+}
+
+response
+
+{
+  "billResp": {
+    "id": 30,
+    "soldProducts": [
+      {
+        "id": 45,
+        "product": "abcd",
+        "quantity": 1,
+        "price": 1200,
+        "returned": false
+      } 
+    ],
+    "price": 1200, - cena za novi proizvod
+    "cashier": "user user",
+    "saleDate": "2019/04/08 20:10:15"
+  }, - novi racun
+  "moneyToReturn": 1200 - novac koji se vraca kada vrati stari proizvod
+}
+ZAKLJUCNO SA OVIM URADJENE SU SLEDECE TACKE ZAHTEVA:
+
+Tacke 1,2,3 i 4 kompletno (3a trenutno nece na frontu)
+6 (a,b,d; ostaje c)
+
+
+19./suppliers/
+
+GET - dobijate listu dobavljaca (za narucivanje od strane komercijaliste)
+response - lista ovakvih jsona
+{
+  "id": 1,
+  "email": "564.2015@gink.rs", - ovo je hardkodirano (uvek salje meni mail)
+  "name": "EMMI SHOP"
+}
+
+20. /suppliers/{id}/
+GET - dohvata samo dobavljaca sa tim id-jem 
+DELETE - brise samo tog dobavljaca - dzovljeno adminu, vlasniku i komercijalisti
+
+21./product_orders/?status={inactive,ordered,completed}
+
+- GET metoda (stavljate za status parametar jednu od ovih vrednosti, ako ne unesete tacno ili jednostavno nista ne stavite dobicete sve
+narudzbine)
+
+- inactive su one koje je radnik narucio, ali nisu narucene od strane komercijaliste
+-ordered su one koje je komercijalista narucio, ali nisu jos stigle
+-completed su one koje su stigle
+
+
+[
+  {
+    "productName": "abcd",
+    "orderID": 3,
+    "status": "INACTIVE",
+    "productID": 26
+  },
+  {
+    "productName": "abcde",
+    "orderID": 4,
+    "status": "INACTIVE",
+    "productID": 27
+  }
+]
+
+22./orders/
+
+POST metoda
+
+
+{
+
+
+	"orders":[{"orderID":3, "quantity":10}, {"orderID":3}], - ovo su pojedinacne narudzbine koje ste dobili u prethodnom endpointu
+	"supplierID":1 - id dobavljaca
+} primer requesta
+
+ako se ne navede quantity kod orders, podrazumevana je 20
+
+response
+[
+ 
+  {
+    "id": 2,
+    "supplier": "EMMI SHOP",
+    "products": [
+      {
+        "productName": "abcd",
+        "orderID": 3,
+        "status": "ORDERED",
+        "productID": 26
+      }
+    ],
+    "arrived": false,
+    "arrivalDate": null,
+    "orderDate": "2019/04/14 14:14:10"
+  }
+]
+
+napomena: SAMO INACTIVE narudzbine mogu da se naruce od strane komercijaliste (ostale su vec narucene)
+
+23./orders/?arrived={true,false} - dobicete samo one koji su/nisu stigle
+
+GET - dobija se lista narudzbina (od dobavljaca)
+
+24./orders/{id}/ - dobija se jedna narudzbina
+
+GET
+
+25./orders/{id}/invoice
+- id je zapravo id narudzbine koju je narucio komercijalista
+
+GET metoda
+
+{
+    "orderedProducts": [
+      "abcd"
+    ],
+    "supplier": "EMMI SHOP",
+    "id": 3
+  }
+
+
+26./invoices/ - dobijate listu faktura
+- lista jsona koji izgledaju kao ovaj u prethodnoj tacki
+
+27. /invoices/{id}/ - neka specificna  faktura
+
+GET
+
+28./invoices/{id}/pdf
+
+GET metoda
+application/pdf dobijate kao MIME format
+
+
+privh 5 stavki odradjeno, ostala jos jedna tacka u 6.stavki
+
+
+
+29./products/{id}/statistics
+
+-GET
+
+vraca podatke o prodaji samo ovog proizvoda = lista jsona
+
+npr.
+[
+  {
+    "y": 1,
+    "x": "2019/04/08"
+  },
+  {
+    "y": 1,
+    "x": "2019/04/14"
+  },
+  {
+    "y": 3,
+    "x": "2019/04/14"
+  },
+  {
+    "y": 3,
+    "x": "2019/04/14"
+  }
+] - sa ovim podacima ce se crtati grafik preko fusioncharts 
+https://www.fusioncharts.com/angular2-js-charts
+
+30./products/statistics?threshold={int}- vraca podatke o slaboj proizvodi (threshold je zapravo granica, sve sto je prodato <= od tog
+broja se dobija ovde; kao niz)
+Od ovoga ce tabela da se pravi; dateInserted je datum kada je nesto uneto u bazu (to sam dodao skoro, pa ako pise unknown, znaci da je proizvod unet pre nego sto sam to dodao)
+-GET
+
+response body
+[
+  {
+    "id": 23,
+    "quantity": 1,
+    "latestSoldDate": "2019/04/15",
+    "dateInserted": "unknown",
+    "name": "a"
+  },
+  {
+    "id": 24,
+    "quantity": 1,
+    "latestSoldDate": "2019/04/15",
+    "dateInserted": "unknown",
+    "name": "ab"
+  },
+  {
+    "id": 25,
+    "quantity": 4,
+    "latestSoldDate": "2019/04/14",
+    "dateInserted": "unknown",
+    "name": "abc"
+  },
+  {
+    "id": 26,
+    "quantity": 4,
+    "latestSoldDate": "2019/04/14",
+    "dateInserted": "unknown",
+    "name": "abcd"
+  },
+  {
+    "id": 27,
+    "quantity": 0,
+    "latestSoldDate": "2019/04/07",
+    "dateInserted": "unknown",
+    "name": "abcde"
+  },
+  {
+    "id": 28,
+    "quantity": 0,
+    "latestSoldDate": "unknown",
+    "dateInserted": "2019/04/15",
+    "name": "aadasfsss"
+  },
+  {
+    "id": 29,
+    "quantity": 0,
+    "latestSoldDate": "unknown",
+    "dateInserted": "2019/04/15",
+    "name": "proba"
+  }
+] za threshold 5 - ovde gde pise da je quantity > 0, a latestSoldDate unknown, su fake vrednosti (isto ce postojati i na serveru vrv; jer sam tako upisao za neki test)
